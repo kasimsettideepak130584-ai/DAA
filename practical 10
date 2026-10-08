@@ -1,0 +1,125 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+// Structure to represent a weighted edge
+struct Edge {
+    int u, v, weight;
+
+    // Operator to sort edges by weight ascending
+    bool operator<(const Edge& other) const {
+        return weight < other.weight;
+    }
+};
+
+// Disjoint Set Union (DSU) with Path Compression and Union by Rank
+class DSU {
+private:
+    vector<int> parent;
+    vector<int> rank;
+
+public:
+    DSU(int n) {
+        parent.resize(n);
+        rank.resize(n, 0);
+        for (int i = 0; i < n; ++i) {
+            parent[i] = i;
+        }
+    }
+
+    // Find the representative of the set containing i (with path compression)
+    int find(int i) {
+        if (parent[i] == i)
+            return i;
+        return parent[i] = find(parent[i]);
+    }
+
+    // Union of two sets (returns true if merged, false if already in same set)
+    bool unite(int i, int j) {
+        int root_i = find(i);
+        int root_j = find(j);
+
+        if (root_i != root_j) {
+            if (rank[root_i] < rank[root_j]) {
+                swap(root_i, root_j);
+            }
+            parent[root_j] = root_i;
+            if (rank[root_i] == rank[root_j]) {
+                rank[root_i]++;
+            }
+            return true;
+        }
+        return false;
+    }
+};
+
+// Function to compute and print the Minimum Spanning Tree using Kruskal's Algorithm
+void kruskalMST(int numVertices, vector<Edge>& edges) {
+    // 1. Sort all edges in non-decreasing order of weight
+    sort(edges.begin(), edges.end());
+
+    DSU dsu(numVertices);
+    vector<Edge> mst;
+    int totalWeight = 0;
+
+    // 2. Process sorted edges and add valid ones to the MST
+    for (const auto& edge : edges) {
+        if (dsu.unite(edge.u, edge.v)) {
+            mst.push_back(edge);
+            totalWeight += edge.weight;
+            
+            // Early stop if MST has V - 1 edges
+            if (mst.size() == static_cast<size_t>(numVertices - 1)) {
+                break;
+            }
+        }
+    }
+
+    // Check if graph is fully connected
+    if (mst.size() != static_cast<size_t>(numVertices - 1) && numVertices > 1) {
+        cout << "\nError: The graph is disconnected. A Minimum Spanning Tree spanning all vertices does not exist.\n";
+        return;
+    }
+
+    // 3. Print MST Edges
+    cout << "\n--- Minimum Spanning Tree ---\n";
+    cout << "Edge\tWeight\n";
+    for (const auto& edge : mst) {
+        cout << edge.u << " - " << edge.v << "\t" << edge.weight << "\n";
+    }
+    cout << "Total MST Weight: " << totalWeight << "\n";
+}
+
+int main() {
+    int numVertices, numEdges;
+
+    cout << "Enter total number of vertices: ";
+    cin >> numVertices;
+
+    cout << "Enter total number of edges: ";
+    cin >> numEdges;
+
+    vector<Edge> edges;
+
+    cout << "\nEnter " << numEdges << " edges in format: <u v weight> (0-indexed):\n";
+    for (int i = 0; i < numEdges; ++i) {
+        int u, v, weight;
+        cout << "Edge " << i + 1 << ": ";
+        cin >> u >> v >> weight;
+
+        // Basic bounds validation
+        if (u < 0 || u >= numVertices || v < 0 || v >= numVertices) {
+            cout << "Invalid vertex indices! Please enter values between 0 and " << numVertices - 1 << ".\n";
+            i--; // Re-prompt for this edge
+            continue;
+        }
+
+        edges.push_back({u, v, weight});
+    }
+
+    kruskalMST(numVertices, edges);
+
+    return 0;
+}
