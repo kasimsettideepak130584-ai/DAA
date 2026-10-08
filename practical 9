@@ -1,0 +1,98 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
+
+using namespace std;
+
+// Function to compute and print the Minimum Spanning Tree (MST) using Prim's Algorithm
+void primsMST(int numVertices, const vector<vector<pair<int, int>>>& adj) {
+    // Min-priority queue storing pairs of (weight, vertex)
+    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+    int src = 0; // Start traversal from vertex 0
+
+    vector<int> key(numVertices, INT_MAX);  // Minimum edge weights to reach each vertex
+    vector<int> parent(numVertices, -1);     // Parent array to reconstruct the MST
+    vector<bool> inMST(numVertices, false);  // Tracks vertices added to the MST
+
+    key[src] = 0;
+    pq.push({0, src});
+
+    int totalWeight = 0;
+    int verticesAdded = 0;
+
+    while (!pq.empty()) {
+        int u = pq.top().second;
+        pq.pop();
+
+        // Skip vertex if it has already been processed in the MST
+        if (inMST[u]) continue;
+
+        inMST[u] = true;
+        totalWeight += key[u];
+        verticesAdded++;
+
+        // Process adjacent neighbors of vertex u
+        for (const auto& edge : adj[u]) {
+            int v = edge.first;
+            int weight = edge.second;
+
+            // If neighbor v is not yet in MST and edge (u, v) offers a smaller weight
+            if (!inMST[v] && weight < key[v]) {
+                key[v] = weight;
+                parent[v] = u;
+                pq.push({key[v], v});
+            }
+        }
+    }
+
+    // Check if all vertices are connected
+    if (verticesAdded < numVertices) {
+        cout << "\nError: The graph is disconnected. A Minimum Spanning Tree spanning all vertices does not exist.\n";
+        return;
+    }
+
+    // Print MST Edges
+    cout << "\n--- Minimum Spanning Tree ---\n";
+    cout << "Edge\tWeight\n";
+    for (int i = 1; i < numVertices; ++i) {
+        if (parent[i] != -1) {
+            cout << parent[i] << " - " << i << "\t" << key[i] << "\n";
+        }
+    }
+    cout << "Total MST Weight: " << totalWeight << "\n";
+}
+
+int main() {
+    int numVertices, numEdges;
+
+    cout << "Enter total number of vertices: ";
+    cin >> numVertices;
+
+    cout << "Enter total number of edges: ";
+    cin >> numEdges;
+
+    vector<vector<pair<int, int>>> adj(numVertices);
+
+    cout << "\nEnter " << numEdges << " edges in format: <u v weight> (0-indexed):\n";
+    for (int i = 0; i < numEdges; ++i) {
+        int u, v, weight;
+        cout << "Edge " << i + 1 << ": ";
+        cin >> u >> v >> weight;
+
+        // Basic bounds validation
+        if (u < 0 || u >= numVertices || v < 0 || v >= numVertices) {
+            cout << "Invalid vertex indices! Please enter values between 0 and " << numVertices - 1 << ".\n";
+            i--; // Re-prompt for this edge
+            continue;
+        }
+
+        adj[u].push_back({v, weight});
+        adj[v].push_back({u, weight});
+    }
+
+    primsMST(numVertices, adj);
+
+    return 0;
+}
